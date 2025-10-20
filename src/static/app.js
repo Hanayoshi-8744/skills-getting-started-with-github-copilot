@@ -69,7 +69,50 @@ document.addEventListener("DOMContentLoaded", () => {
           details.participants.forEach((p) => {
             const li = document.createElement("li");
             li.className = "participant-item";
-            li.textContent = p;
+
+            // participant email label
+            const span = document.createElement("span");
+            span.className = "participant-email";
+            span.textContent = p;
+            li.appendChild(span);
+
+            // delete button
+            const delBtn = document.createElement("button");
+            delBtn.className = "delete-btn";
+            delBtn.setAttribute("aria-label", `Unregister ${p} from ${name}`);
+            delBtn.title = "Unregister";
+            delBtn.innerHTML = "✖"; // simple cross icon
+
+            // Click handler to unregister participant
+            delBtn.addEventListener("click", async (e) => {
+              e.stopPropagation();
+              // Confirm (native, small safeguard)
+              if (!confirm(`Unregister ${p} from ${name}?`)) return;
+
+              try {
+                const res = await fetch(
+                  `/activities/${encodeURIComponent(name)}/participants?email=${encodeURIComponent(p)}`,
+                  { method: "DELETE" }
+                );
+
+                const json = await res.json();
+                if (res.ok) {
+                  // Refresh activities to keep UI in sync
+                  fetchActivities();
+                } else {
+                  messageDiv.textContent = json.detail || json.message || "Failed to unregister";
+                  messageDiv.className = "error";
+                  messageDiv.classList.remove("hidden");
+                }
+              } catch (err) {
+                console.error("Error unregistering:", err);
+                messageDiv.textContent = "Failed to unregister. Please try again.";
+                messageDiv.className = "error";
+                messageDiv.classList.remove("hidden");
+              }
+            });
+
+            li.appendChild(delBtn);
             ul.appendChild(li);
           });
 
